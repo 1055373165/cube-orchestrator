@@ -44,6 +44,10 @@ func Containes(states []State, state State) bool {
 	return false
 }
 
+func ValidStateTransition(src State, dst State) bool {
+	return Containes(stateTransitionMap[src], dst)
+}
+
 type Task struct {
 	ID            uuid.UUID
 	ContainerID   string
