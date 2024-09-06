@@ -27,13 +27,32 @@ const (
 	Failed
 )
 
+var stateTransitionMap = map[State][]State{
+	Pending:   []State{Scheduled},
+	Scheduled: []State{Running, Failed},
+	Running:   []State{Running, Completed, Failed},
+	Completed: []State{},
+	Failed:    []State{},
+}
+
+func Containes(states []State, state State) bool {
+	for _, s := range states {
+		if s == state {
+			return true
+		}
+	}
+	return false
+}
+
 type Task struct {
 	ID            uuid.UUID
+	ContainerID   string
 	Name          string
 	State         State
 	Image         string
-	Memory        int
-	Disk          int
+	CPU           float64
+	Memory        int64
+	Disk          int64
 	ExposedPorts  nat.PortSet
 	PortBindings  map[string]string
 	RestartPolicy string
@@ -48,24 +67,59 @@ type TaskEvent struct {
 	Task      Task
 }
 
+// Config struct to hold Docker container config
 type Config struct {
-	Name          string // "test-container-1"
-	AttachStdin   bool
-	AttachStdout  bool
-	AttachStderr  bool
-	ExposedPorts  nat.PortSet // Port is a string containing port number and protocol in the format "80/tcp""tcp:80".
-	Cmd           []string
-	Image         string
-	CPU           float64
-	Memory        int64
-	Disk          int64
-	Env           []string // Allows a user to specify environment variables that will get passed into the container.
-	RestartPolicy string   // Tells the Docker daemon what to do if a container dies unexpectedly.
+	// Name of the task, also used as the container name
+	Name string // "test-container-1"
+	// AttachStdin boolean which determines if stdin should be attached
+	AttachStdin bool
+	// AttachStdout boolean which determines if stdout should be attached
+	AttachStdout bool
+	// AttachStderr boolean which determines if stderr shoulb be attached
+	AttachStderr bool
+	// ExposedPorts list of posts exposed
+	ExposedPorts nat.PortSet // Port is a string containing port number and protocol in the format "80/tcp""tcp:80".
+	// Cmd to be run inside container (optional)
+	Cmd []string
+	// Image used to run the container
+	Image string
+	// CPU
+	CPU float64
+	// Memory in MiB
+	Memory int64
+	// Disk in GiB
+	Disk int64
+	// Env variables
+	Env []string // Allows a user to specify environment variables that will get passed into the container.
+	// RestartPolicy for the container ["", "always", "unless-stopped", "on-failure"]
+	RestartPolicy string // Tells the Docker daemon what to do if a container dies unexpectedly.
+}
+
+func NewConfig(t *Task) *Config {
+	return &Config{
+		Name:          t.Name,
+		ExposedPorts:  t.ExposedPorts,
+		Image:         t.Image,
+		CPU:           t.CPU,
+		Memory:        t.Memory,
+		Disk:          t.Disk,
+		RestartPolicy: t.RestartPolicy,
+	}
 }
 
 type Docker struct {
 	Client *client.Client
 	Config Config
+}
+
+func NewDocker(c *Config) *Docker {
+	// NewClientWithOpts initializes a new API client with a default HTTPClient,
+	// and default API host and version. It also initializes the custom HTTP headers to add to each request.
+	dc, _ := client.NewClientWithOpts(client.FromEnv)
+	return &Docker{
+		Client: dc,
+		Config: *c,
+	}
 }
 
 type DockerResult struct {
@@ -130,6 +184,7 @@ func (d *Docker) Run() DockerResult {
 	}
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+
 	return DockerResult{
 		ContainerId: resp.ID,
 		Action:      "start",
