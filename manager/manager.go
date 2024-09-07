@@ -70,7 +70,7 @@ func (m *Manager) updateTasks() {
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("Error sending request: %v\n", err.Error())
+			log.Printf("Error sending request: %v\n", err)
 			return
 		}
 

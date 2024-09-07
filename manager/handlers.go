@@ -16,7 +16,7 @@ func (a *Api) StartTaskHandler(w http.ResponseWriter, r *http.Request) {
 	te := task.TaskEvent{}
 	if err := json.NewDecoder(r.Body).Decode(&te); err != nil {
 		msg := fmt.Sprintf("Error unmarshalling body: %v\n", err)
-		log.Printf(msg)
+		log.Println(msg)
 		w.WriteHeader(400)
 		e := ErrResponse{
 			HTTPStateCode: 400,
