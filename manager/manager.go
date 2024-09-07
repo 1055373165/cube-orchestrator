@@ -38,6 +38,7 @@ func New(workers []string) *Manager {
 		Pending:       *queue.New(),
 		TaskDb:        taskDb,
 		EventDb:       eventDb,
+		Workers:       workers,
 		WorkerTaskMap: workerTaskMap,
 		TaskWorkerMap: taskWorkerMap,
 		LastWorker:    0,
@@ -80,7 +81,7 @@ func (m *Manager) UpdateTask() {
 		}
 
 		for _, task := range tasks {
-			log.Printf("Attempting to update task %v\n", task.ID)
+			log.Printf("Attempting to update task %v\n", task.ID.String())
 
 			_, ok := m.TaskDb[task.ID.String()]
 			if !ok {

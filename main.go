@@ -42,7 +42,7 @@ func main() {
 			ID:    uuid.New(),
 			Name:  fmt.Sprintf("test-container-%d", i),
 			State: task.Scheduled,
-			Image: "strm/helloworld-http",
+			Image: "containous/whoami",
 		}
 		te := task.TaskEvent{
 			ID:    uuid.New(),
