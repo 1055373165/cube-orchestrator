@@ -33,7 +33,7 @@ func main() {
 
 	fmt.Println("Starting Cube namager")
 
-	workers := []string{fmt.Sprintf("%s:%d", mhost, mport)}
+	workers := []string{fmt.Sprintf("%s:%d", whost, wport)}
 	m := manager.New(workers)
 	mapi := manager.Api{Address: mhost, Port: mport, Manager: m}
 
