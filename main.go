@@ -5,10 +5,8 @@ import (
 	"cube/task"
 	"cube/worker"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
@@ -29,7 +27,7 @@ func main() {
 	}
 	wapi := worker.Api{Address: whost, Port: wport, Worker: &w}
 
-	go runTasks(&w)
+	go w.RunTasks()
 	go w.CollectStats()
 	go wapi.Start()
 
@@ -43,19 +41,4 @@ func main() {
 	go m.UpdateTasks()
 
 	mapi.Start()
-}
-
-func runTasks(w *worker.Worker) {
-	for {
-		if w.Queue.Len() > 0 {
-			result := w.RunTask()
-			if result.Error != nil {
-				log.Printf("Error runnign task %v\n", result.Error)
-			}
-		} else {
-			log.Printf("No tasks to process currently.\n")
-		}
-		log.Println("Sleeping for 10 seconds.")
-		time.Sleep(10 * time.Second)
-	}
 }

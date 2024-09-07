@@ -56,6 +56,21 @@ func (w *Worker) CollectStats() {
 	}
 }
 
+func (w *Worker) RunTasks() {
+	for {
+		if w.Queue.Len() != 0 {
+			result := w.runTask()
+			if result.Error != nil {
+				log.Printf("Error running task: %v\n", result.Error)
+			}
+		} else {
+			log.Printf("No tasks to process currently.\n")
+		}
+		log.Println("Sleeping 10 time seconds")
+		time.Sleep(10 * time.Second)
+	}
+}
+
 // Guaranteeing idempotency of multiple-run status.
 // 1. Pull a task off the queue.
 // 2. Convert it from an interface to a task.Task type.
@@ -64,7 +79,7 @@ func (w *Worker) CollectStats() {
 // 5. If the task from the queue is in the state Scheduled, call StartTask.
 // 6. If the task from the queue is in the state Completed, call StopTask.
 // 6. Else, there is an invalid transition, so return an error.
-func (w *Worker) RunTask() task.DockerResult {
+func (w *Worker) runTask() task.DockerResult {
 	t := w.Queue.Dequeue()
 	if t == nil {
 		log.Println("No tasks in the queue")
