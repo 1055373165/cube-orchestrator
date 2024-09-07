@@ -133,10 +133,11 @@ func (m *Manager) SendWork() {
 	log.Printf("Pulled %v off pending queue\n", t)
 
 	m.EventDb[te.ID.String()] = &te
-	m.TaskDb[t.ID.String()] = &t
 	m.WorkerTaskMap[w] = append(m.WorkerTaskMap[w], t.ID)
 	m.TaskWorkerMap[t.ID] = w
+
 	t.State = task.Scheduled
+	m.TaskDb[t.ID.String()] = &t
 
 	data, err := json.Marshal(te)
 	if err != nil {

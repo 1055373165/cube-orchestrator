@@ -39,22 +39,6 @@ func main() {
 	m := manager.New(workers)
 	mapi := manager.Api{Address: mhost, Port: mport, Manager: m}
 
-	for i := 0; i < 3; i++ {
-		t := task.Task{
-			ID:    uuid.New(),
-			Name:  fmt.Sprintf("test-container-%d", i),
-			State: task.Scheduled,
-			Image: "containous/whoami",
-		}
-		te := task.TaskEvent{
-			ID:    uuid.New(),
-			State: task.Running,
-			Task:  t,
-		}
-		m.AddTask(te)
-		m.SendWork()
-	}
-
 	go m.ProcessTasks()
 	go m.UpdateTasks()
 
