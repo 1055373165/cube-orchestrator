@@ -15,12 +15,11 @@ import (
 )
 
 func main() {
-	host := os.Getenv("CUBE_HOST")
-	port, err := strconv.Atoi(os.Getenv("CUBE_PORT"))
-	if err != nil {
-		log.Printf("convert cube string port to int failed: %s", err.Error())
-		return
-	}
+	whost := os.Getenv("CUBE_WORKER_HOST")
+	wport, _ := strconv.Atoi(os.Getenv("CUBE_WORKER_PORT"))
+
+	mhost := os.Getenv("CUBE_MANAGER_HOST")
+	mport, _ := strconv.Atoi(os.Getenv("CUBE_MANAGER_PORT"))
 
 	fmt.Println("Starting Cube worker")
 
@@ -28,14 +27,17 @@ func main() {
 		Queue: *queue.New(),
 		Db:    make(map[uuid.UUID]*task.Task),
 	}
-	api := worker.Api{Address: host, Port: port, Worker: &w}
+	wapi := worker.Api{Address: whost, Port: wport, Worker: &w}
 
 	go runTasks(&w)
 	go w.CollectStats()
-	go api.Start()
+	go wapi.Start()
 
-	workers := []string{fmt.Sprintf("%s:%d", host, port)}
+	fmt.Println("Starting Cube namager")
+
+	workers := []string{fmt.Sprintf("%s:%d", mhost, mport)}
 	m := manager.New(workers)
+	mapi := manager.Api{Address: mhost, Port: mport, Manager: m}
 
 	for i := 0; i < 3; i++ {
 		t := task.Task{
@@ -53,20 +55,10 @@ func main() {
 		m.SendWork()
 	}
 
-	go func() {
-		for {
-			fmt.Printf("[Manager] Updating tasks from %d workers\n", len(m.Workers))
-			m.UpdateTask()
-			time.Sleep(15 * time.Second)
-		}
-	}()
+	go m.ProcessTasks()
+	go m.UpdateTasks()
 
-	for {
-		for _, t := range m.TaskDb {
-			fmt.Printf("[Manager] Task: id %s, state: %d\n", t.ID.String(), t.State)
-			time.Sleep(15 * time.Second)
-		}
-	}
+	mapi.Start()
 }
 
 func runTasks(w *worker.Worker) {
