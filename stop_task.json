@@ -1,0 +1,11 @@
+{
+    "ID": "6be4cb6b-61d1-40cb-bc7b-9cacefefa60c",
+    "State": 2,
+    "Task": {
+        "State": 3,
+        "ID": "21b23589-5d2d-4731-b5c9-a97e9832d022", 
+	    "ContainerID": "8d5256cde38437a643619d1f323d1db16f11cd3047752047f03389b27491bcbf",
+        "Name": "test-chapter-4", 
+        "Image": "strm/helloworld-http"
+    }
+}

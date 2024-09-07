@@ -17,37 +17,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type State int
-
-const (
-	Pending State = iota
-	Scheduled
-	Running
-	Completed
-	Failed
-)
-
-var stateTransitionMap = map[State][]State{
-	Pending:   []State{Scheduled},
-	Scheduled: []State{Running, Failed},
-	Running:   []State{Running, Completed, Failed},
-	Completed: []State{},
-	Failed:    []State{},
-}
-
-func Containes(states []State, state State) bool {
-	for _, s := range states {
-		if s == state {
-			return true
-		}
-	}
-	return false
-}
-
-func ValidStateTransition(src State, dst State) bool {
-	return Containes(stateTransitionMap[src], dst)
-}
-
 type Task struct {
 	ID            uuid.UUID
 	ContainerID   string

@@ -80,6 +80,7 @@ func (w *Worker) RunTask() task.DockerResult {
 		case task.Completed:
 			result = w.StopTask(taskQueued)
 		default:
+			fmt.Println("persisted state: ", taskPersisted.State, "taskQueued.State: ", taskQueued.State)
 			result.Error = errors.New("we should not get here")
 		}
 	} else {
@@ -88,6 +89,14 @@ func (w *Worker) RunTask() task.DockerResult {
 		result.Error = err
 	}
 	return result
+}
+
+func (w *Worker) GetTasks() []*task.Task {
+	tasks := []*task.Task{}
+	for _, t := range w.Db {
+		tasks = append(tasks, t)
+	}
+	return tasks
 }
 
 func (w *Worker) StartTask(t task.Task) task.DockerResult {
