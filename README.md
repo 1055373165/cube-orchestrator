@@ -13,164 +13,79 @@ CUBE_MANAGER_HOST=127.0.0.1 \
 CUBE_MANAGER_PORT=5556 \
 go run main.go
 ```
+### POST new task
 
-### Search task list
-
-```
-curl -v localhost:5556/tasks
-```
-
-Output:
-```
-[
-  {
-    "ID": "21b23589-5d2d-4731-b5c9-a97e9832d021",
-    "ContainerID": "",
-    "Name": "test-container-0",
-    "State": 1,
-    "Image": "containous/whoami",
-    "CPU": 0,
-    "Memory": 0,
-    "Disk": 0,
-    "ExposedPorts": null,
-    "PortBindings": null,
-    "RestartPolicy": "",
-    "StartTime": "0001-01-01T00:00:00Z",
-    "FinishTime": "0001-01-01T00:00:00Z"
-  }
-]
-```
-
-### POST new task to manager, manager distribute to worker
-```
 curl -v --request POST \         
 --header 'Content-Type: application/json' \
---data @task.json \
+--data @task1.json \
 localhost:5556/tasks
-```
-
-Output:
-```
-{"status":"Pulling from containous/whoami","id":"latest"}
-{"status":"Digest: sha256:7d6a3c8f91470a23ef380320609ee6e69ac68d20bc804f3a1c6065fb56cfa34e"}
-{"status":"Status: Image is up to date for containous/whoami:latest"}
-2024/09/08 02:17:09 task 21b23589-5d2d-4731-b5c9-a97e9832d021 Running on container 1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169
-2024/09/08 02:17:09 Sleeping 10 time seconds
-```
-
-### Search task list again
 
 ```
-curl -v localhost:5556/tasks
-```
+2024/09/08 16:02:59 Pulled {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7777]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0} off pending queue
+2024/09/08 16:02:59 Added task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+2024/09/08 16:02:59 task.Task{ID:uuid.UUID{0xbb, 0x1d, 0x59, 0xef, 0x9f, 0xc1, 0x4e, 0x4b, 0xa4, 0x4d, 0xdb, 0x57, 0x1e, 0xee, 0xd2, 0x3}, ContainerID:"", Name:"test-chapter-9.1", State:1, Image:"sun4965485/echo-smy:v1", CPU:0, Memory:0, Disk:0, ExposedPorts:nat.PortSet{"7777/tcp":struct {}{}}, HostPorts:nat.PortMap(nil), PortBindings:map[string]string{"7777/tcp":"7777"}, RestartPolicy:"", StartTime:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), FinishTime:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), HealthCheck:"/health", RestartCount:0}
+2024/09/08 16:02:59 Sleeping for 10 seconds
 
-Output:
+2024/09/08 16:03:09 Performing task health check
+2024/09/08 16:03:09 Task health checks completed
+2024/09/08 16:03:09 Sleeping for 60 seconds
+
+{"status":"Pulling from sun4965485/echo-smy","id":"v1"}
+{"status":"Digest: sha256:b3a6951a31ab9ba821c95815ccc16de992fd00019fab37ed607514e61cf6f6fe"}
+{"status":"Status: Image is up to date for sun4965485/echo-smy:v1"}
+2024/09/08 16:03:12 task bb1d59ef-9fc1-4e4b-a44d-db571eeed203 Running on container d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333
+
+2024/09/08 16:06:24 Checking worker 127.0.0.1:5555 for task updates
+2024/09/08 16:06:24 Collecting stats
+2024/09/08 16:06:24 Attempting to update task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+```
+### Retrieve task list
+
+curl -v localhost:5556/tasks | jq
+
 ```
 [
   {
-    "ID": "21b23589-5d2d-4731-b5c9-a97e9832d021",
-    "ContainerID": "1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169",
-    "Name": "test-container-0",
+    "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203",
+    "ContainerID": "d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333",
+    "Name": "test-chapter-9.1",
     "State": 2,
-    "Image": "containous/whoami",
+    "Image": "sun4965485/echo-smy:v1",
     "CPU": 0,
     "Memory": 0,
     "Disk": 0,
-    "ExposedPorts": null,
-    "PortBindings": null,
+    "ExposedPorts": {
+      "7777/tcp": {}
+    },
+    "HostPorts": null,
+    "PortBindings": {
+      "7777/tcp": "7777"
+    },
     "RestartPolicy": "",
     "StartTime": "0001-01-01T00:00:00Z",
-    "FinishTime": "0001-01-01T00:00:00Z"
+    "FinishTime": "0001-01-01T00:00:00Z",
+    "HealthCheck": "/health",
+    "RestartCount": 0
   }
 ]
 ```
 
-### Simulate task completed, stop and remove container which run task
-```
+### Post task event to complete task
 curl -v --request POST \
 --header 'Content-Type: application/json' \
 --data @stop_task.json \
-localhost:5556/tasks
-```
-
-Output:
-```
-2024/09/08 02:21:59 Atemmpting to stop container 1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169
-2024/09/08 02:21:59 Stopped and removed container 1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169 for task 21b23589-5d2d-4731-b5c9-a97e9832d021
-2024/09/08 02:21:59 Sleeping 10 time seconds
-```
-### Search task list again
 
 ```
-curl -v localhost:5556/tasks
+2024/09/08 16:07:09 Pulled {bb1d59ef-9fc1-4e4b-a44d-db571eeed203 d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333 test-chapter-9.1 3 sun4965485/echo-smy:v1 0 0 0 map[] map[] map[]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC  0} off pending queue
+2024/09/08 16:07:09 Added task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+2024/09/08 16:07:09 task.Task{ID:uuid.UUID{0xbb, 0x1d, 0x59, 0xef, 0x9f, 0xc1, 0x4e, 0x4b, 0xa4, 0x4d, 0xdb, 0x57, 0x1e, 0xee, 0xd2, 0x3}, ContainerID:"d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333", Name:"test-chapter-9.1", State:3, Image:"sun4965485/echo-smy:v1", CPU:0, Memory:0, Disk:0, ExposedPorts:nat.PortSet(nil), HostPorts:nat.PortMap(nil), PortBindings:map[string]string(nil), RestartPolicy:"", StartTime:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), FinishTime:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), HealthCheck:"", RestartCount:0}
+2024/09/08 16:07:09 Sleeping for 10 seconds
+2024/09/08 16:07:12 Atemmpting to stop container d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333
+2024/09/08 16:07:12 Stopped and removed container d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333 for task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+2024/09/08 16:07:12 Sleeping 10 time seconds
 ```
 
-```
-[
-  {
-    "ID": "21b23589-5d2d-4731-b5c9-a97e9832d021",
-    "ContainerID": "1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169",
-    "Name": "test-container-0",
-    "State": 3,
-    "Image": "containous/whoami",
-    "CPU": 0,
-    "Memory": 0,
-    "Disk": 0,
-    "ExposedPorts": null,
-    "PortBindings": null,
-    "RestartPolicy": "",
-    "StartTime": "0001-01-01T00:00:00Z",
-    "FinishTime": "2024-09-07T18:21:59.378513698Z"
-  }
-]
-```
-### check if the container has been stopped and removed
-```
-$ docker ps -a
+### check container status
+
+$ docker ps -a              
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
-```
-
-
-docker run -d -p 7777:7777 sun4965485/echo-smy:v1
-
-$ curl -v http://localhost:7777/health
-* Host localhost:7777 was resolved.
-* IPv6: ::1
-* IPv4: 127.0.0.1
-*   Trying [::1]:7777...
-* Connected to localhost (::1) port 7777
-> GET /health HTTP/1.1
-> Host: localhost:7777
-> User-Agent: curl/8.7.1
-> Accept: */*
-> 
-* Request completely sent off
-< HTTP/1.1 200 OK
-< Date: Sun, 08 Sep 2024 07:43:34 GMT
-< Content-Length: 2
-< Content-Type: text/plain; charset=utf-8
-< 
-* Connection #0 to host localhost left intact
-OK%   
-
-
-$ curl -v http://localhost:7777/healthfail
-* Host localhost:7777 was resolved.
-* IPv6: ::1
-* IPv4: 127.0.0.1
-*   Trying [::1]:7777...
-* Connected to localhost (::1) port 7777
-> GET /healthfail HTTP/1.1
-> Host: localhost:7777
-> User-Agent: curl/8.7.1
-> Accept: */*
-> 
-* Request completely sent off
-< HTTP/1.1 500 Internal Server Error
-< Date: Sun, 08 Sep 2024 07:43:45 GMT
-< Content-Length: 21
-< Content-Type: text/plain; charset=utf-8
-< 
-* Connection #0 to host localhost left intact
-Internal server error%                                                                                                                           
-

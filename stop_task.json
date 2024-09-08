@@ -4,7 +4,7 @@
     "Task": {
         "State": 3, 
         "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203", 
-	    "ContainerID": "acc9a4e3a6de4812707648c4d4ed996555d94870cf70945641ad851db3ba61b7",
+	    "ContainerID": "d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333",
         "Name": "test-chapter-9.1", 
         "Image": "sun4965485/echo-smy:v1"
     }
