@@ -265,7 +265,7 @@ func (m *Manager) SendWork() {
 			return
 		}
 
-		log.Printf("invalid request: existing task %s is hte state %v and cannot transition to the completed state",
+		log.Printf("invalid request: existing task %s is the state %v and cannot transition to the completed state",
 			persistedTask.ID.String(), persistedTask.State)
 		return
 	}
@@ -273,7 +273,7 @@ func (m *Manager) SendWork() {
 	t := te.Task
 	w, err := m.SelectWorker(t)
 	if err != nil {
-		log.Printf("error selecting worker for task: %s: %v", w.Name, t.ID.String())
+		log.Printf("error selecting worker for task: %v, error: %s", t.ID.String(), err.Error())
 		return
 	}
 

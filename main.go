@@ -63,7 +63,6 @@ func main() {
 	}
 
 	m := manager.New(workers, "epvm")
-	// m := manager.New(workers, "epvm")
 	mapi := manager.Api{Address: mhost, Port: mport, Manager: m}
 
 	go m.ProcessTasks()

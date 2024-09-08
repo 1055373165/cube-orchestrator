@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -45,14 +46,15 @@ func (n *Node) GetStats() (*stats.Stats, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		msg := fmt.Sprintf("Error retrieve stats from %v: %v", n.Api, err)
+		msg := fmt.Sprintf("Error retrieving stats from %v: %v", n.Api, err)
 		log.Println(msg)
 		return nil, errors.New(msg)
 	}
 
 	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
 	var stats stats.Stats
-	err = json.NewDecoder(resp.Body).Decode(&stats)
+	err = json.Unmarshal(body, &stats)
 	if err != nil {
 		msg := fmt.Sprintf("error decoding message while getting stats for node %s", n.Name)
 		log.Println(msg)
