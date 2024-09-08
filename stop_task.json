@@ -2,10 +2,10 @@
     "ID": "6be4cb6b-61d1-40cb-bc7b-9cacefefa60c",
     "State": 2,
     "Task": {
-        "State": 3,
-        "ID": "21b23589-5d2d-4731-b5c9-a97e9832d021", 
-	    "ContainerID": "1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169",
-        "Name": "test-container-0", 
-        "Image": "containous/whoami"
+        "State": 3, 
+        "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203", 
+	    "ContainerID": "acc9a4e3a6de4812707648c4d4ed996555d94870cf70945641ad851db3ba61b7",
+        "Name": "test-chapter-9.1", 
+        "Image": "sun4965485/echo-smy:v1"
     }
 }

@@ -129,3 +129,48 @@ curl -v localhost:5556/tasks
 $ docker ps -a
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
+
+
+docker run -d -p 7777:7777 sun4965485/echo-smy:v1
+
+$ curl -v http://localhost:7777/health
+* Host localhost:7777 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:7777...
+* Connected to localhost (::1) port 7777
+> GET /health HTTP/1.1
+> Host: localhost:7777
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 200 OK
+< Date: Sun, 08 Sep 2024 07:43:34 GMT
+< Content-Length: 2
+< Content-Type: text/plain; charset=utf-8
+< 
+* Connection #0 to host localhost left intact
+OK%   
+
+
+$ curl -v http://localhost:7777/healthfail
+* Host localhost:7777 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:7777...
+* Connected to localhost (::1) port 7777
+> GET /healthfail HTTP/1.1
+> Host: localhost:7777
+> User-Agent: curl/8.7.1
+> Accept: */*
+> 
+* Request completely sent off
+< HTTP/1.1 500 Internal Server Error
+< Date: Sun, 08 Sep 2024 07:43:45 GMT
+< Content-Length: 21
+< Content-Type: text/plain; charset=utf-8
+< 
+* Connection #0 to host localhost left intact
+Internal server error%                                                                                                                           
+
