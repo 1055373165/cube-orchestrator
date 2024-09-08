@@ -6,6 +6,8 @@
 
 ### Service start
 
+docker run -d -p 7777:7777 --name echo sun4965485/echo-smy:v1
+
 ```
 CUBE_WORKER_HOST=127.0.0.1 \
 CUBE_WORKER_PORT=5555 \

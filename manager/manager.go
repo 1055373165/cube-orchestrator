@@ -2,6 +2,8 @@ package manager
 
 import (
 	"bytes"
+	"cube/node"
+	"cube/scheduler"
 	"cube/task"
 	"cube/worker"
 	"encoding/json"
@@ -28,16 +30,36 @@ type Manager struct {
 	WorkerTaskMap map[string][]uuid.UUID
 	TaskWorkerMap map[uuid.UUID]string
 	LastWorker    int
+	WorkerNodes   []*node.Node
+	Scheduler     scheduler.Scheduler
 }
 
-func New(workers []string) *Manager {
-	taskDb := make(map[string]*task.Task)         // task uuid -> task object
-	eventDb := make(map[string]*task.TaskEvent)   // event uuid -> task event object
+func New(workers []string, schedulerType string) *Manager {
+	taskDb := make(map[string]*task.Task)       // task uuid -> task object
+	eventDb := make(map[string]*task.TaskEvent) // event uuid -> task event object
+
 	workerTaskMap := make(map[string][]uuid.UUID) // ip:port -> []taskUUID
 	taskWorkerMap := make(map[uuid.UUID]string)   // task uuid -> ip:port
-	for _, worker := range workers {
-		workerTaskMap[worker] = []uuid.UUID{}
+
+	var nodes []*node.Node
+	for worker := range workers {
+		workerTaskMap[workers[worker]] = []uuid.UUID{}
+
+		nAPI := fmt.Sprintf("http://%v", workers[worker])
+		n := node.NewNode(workers[worker], nAPI, "worker")
+		nodes = append(nodes, n)
 	}
+
+	var s scheduler.Scheduler
+	switch schedulerType {
+	case "greedy":
+		s = &scheduler.Greedy{Name: "greedy"}
+	case "roundrobin":
+		s = &scheduler.RoundRobin{Name: "roundrobin"}
+	default:
+		s = &scheduler.Epvm{Name: "epvm"}
+	}
+
 	return &Manager{
 		Pending:       *queue.New(),
 		TaskDb:        taskDb,
@@ -46,6 +68,8 @@ func New(workers []string) *Manager {
 		WorkerTaskMap: workerTaskMap,
 		TaskWorkerMap: taskWorkerMap,
 		LastWorker:    0,
+		WorkerNodes:   nodes,
+		Scheduler:     s,
 	}
 }
 
