@@ -73,17 +73,21 @@ func New(workers []string, schedulerType string) *Manager {
 	}
 }
 
-func (m *Manager) SelectWorker() string {
-	var newWorker int
-	if m.LastWorker+1 < len(m.Workers) {
-		newWorker = m.LastWorker + 1
-		m.LastWorker++
-	} else {
-		newWorker = 0
-		m.LastWorker = 0
+func (m *Manager) SelectWorker(t task.Task) (*node.Node, error) {
+	candidates := m.Scheduler.SelectCandidateNodes(t, m.WorkerNodes)
+	if candidates == nil {
+		msg := fmt.Sprintf("No avaiable candidates match resource request for task %v", t.ID.String())
+		err := errors.New(msg)
+		return nil, err
 	}
 
-	return m.Workers[newWorker]
+	scores := m.Scheduler.Score(t, candidates)
+	if scores == nil {
+		return nil, fmt.Errorf("no scores returned to task %v", t)
+	}
+
+	selectedNode := m.Scheduler.Pick(scores, candidates)
+	return selectedNode, nil
 }
 
 func (m *Manager) updateTasks() {
@@ -185,7 +189,7 @@ func (m *Manager) restartTask(t *task.Task) {
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		log.Printf("Error connecting to %v: %v\n", w, err)
-		m.Pending.Enqueue(t)
+		m.Pending.Enqueue(te)
 		return
 	}
 
@@ -219,61 +223,104 @@ func (m *Manager) ProcessTasks() {
 	}
 }
 
+func (m *Manager) stopTask(worker string, taskID string) {
+	client := &http.Client{}
+	url := fmt.Sprintf("http://%s/tasks/%s", worker, taskID)
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		log.Printf("error creating request to delete task %s: %v", taskID, err)
+		return
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("error connecting to worker at %s: %v", url, err)
+		return
+	}
+
+	if resp.StatusCode != 204 {
+		log.Printf("Error sending request: %v", err)
+		return
+	}
+
+	log.Printf("task %s has been scheduled to be stopped", taskID)
+}
+
 func (m *Manager) SendWork() {
 	if m.Pending.Len() == 0 {
 		log.Println("No task event in the queue")
 		return
 	}
 
-	w := m.SelectWorker()
 	e := m.Pending.Dequeue()
 	te := e.(task.TaskEvent)
-	t := te.Task
-	log.Printf("Pulled %v off pending queue\n", t)
-
 	m.EventDb[te.ID.String()] = &te
-	m.WorkerTaskMap[w] = append(m.WorkerTaskMap[w], t.ID)
-	m.TaskWorkerMap[t.ID] = w
+	log.Printf("Pulled %v off pending queue\n", te)
+
+	taskWorker, ok := m.TaskWorkerMap[te.Task.ID]
+	if ok {
+		persistedTask := m.TaskDb[te.Task.ID.String()]
+		if te.State == task.Completed && task.ValidStateTransition(persistedTask.State, te.State) {
+			m.stopTask(taskWorker, te.Task.ID.String())
+			return
+		}
+
+		log.Printf("invalid request: existing task %s is hte state %v and cannot transition to the completed state",
+			persistedTask.ID.String(), persistedTask.State)
+		return
+	}
+
+	t := te.Task
+	w, err := m.SelectWorker(t)
+	if err != nil {
+		log.Printf("error selecting worker for task: %s: %v", w.Name, t.ID.String())
+		return
+	}
+
+	log.Printf("[manager] selected worker %s for task %s", w.Name, t.ID.String())
+
+	m.WorkerTaskMap[w.Name] = append(m.WorkerTaskMap[w.Name], t.ID)
+	m.TaskWorkerMap[t.ID] = w.Name
 
 	t.State = task.Scheduled
 	m.TaskDb[t.ID.String()] = &t
 
 	data, err := json.Marshal(te)
 	if err != nil {
-		log.Printf("Unable to marshal task event object: %v.\n", t)
+		log.Printf("Unable to marhsal task object: %v.", t)
 		return
 	}
 
-	url := fmt.Sprintf("http://%s/tasks", w)
+	url := fmt.Sprintf("http://%s/tasks", w.Name)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		log.Printf("Error connecting to %v: %v\n", w, err.Error())
-		m.Pending.Enqueue(te) // scheduled failed, re-enter queue
+		log.Printf("[manager] Error connecting to %v: %v", w, err)
+		m.Pending.Enqueue(te)
 		return
 	}
+	defer resp.Body.Close()
 
 	d := json.NewDecoder(resp.Body)
-	// if request failed, resp body is ErrorResponse
 	if resp.StatusCode != http.StatusCreated {
 		e := worker.ErrorResponse{}
-		err := d.Decode(&e)
+		err = d.Decode(&e)
 		if err != nil {
 			fmt.Printf("Error decoding response: %s\n", err.Error())
 			return
 		}
-		log.Printf("Response error (%d): %s\n", e.HTTPStateCode, e.Message)
+		log.Printf("Response error (%d): %s", e.HTTPStateCode, e.Message)
 		return
 	}
 
-	// if request sucess, resp body is task object
 	t = task.Task{}
 	err = d.Decode(&t)
 	if err != nil {
 		fmt.Printf("Error decoding response: %s\n", err.Error())
 		return
 	}
+	w.TaskCount++
 
-	log.Printf("%#v\n", t)
+	log.Printf("[manager] received response from worker: %#v\n", t)
 }
 
 func (m *Manager) checkTaskHealth(t task.Task) error {
@@ -303,6 +350,7 @@ func (m *Manager) checkTaskHealth(t task.Task) error {
 	}
 
 	log.Printf("Task %s health check response: %v\n", t.ID.String(), resp.StatusCode)
+
 	return nil
 }
 
@@ -315,11 +363,12 @@ func (m *Manager) GetTasks() []*task.Task {
 }
 
 func (m *Manager) AddTask(te task.TaskEvent) {
+	log.Printf("Add event %v to pending queue", te)
 	m.Pending.Enqueue(te)
 }
 
 func getHostPort(ports nat.PortMap) *string {
-	for k, _ := range ports {
+	for k := range ports {
 		return &ports[k][0].HostPort
 	}
 	return nil

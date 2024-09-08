@@ -1,0 +1,17 @@
+{
+    "ID": "a7aa1d44-08f6-443e-9378-f5884313419e",
+    "State": 2,
+    "Task": {
+        "State": 1,
+        "ID": "95fbe134-7f19-496a-acfc-c7753e5b4cd2",
+        "Name": "test-chapter-9.4",
+        "Image": "sun4965485/echo-smy:v1",
+        "ExposedPorts": {
+            "7777/tcp": {}
+        },
+        "PortBindings": {
+            "7777/tcp": "7777"
+        },
+        "HealthCheck": "/health"
+    }
+}
