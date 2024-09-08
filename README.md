@@ -94,10 +94,11 @@ localhost:5556/tasks
 ```
 
 Output:
+```
 2024/09/08 02:21:59 Atemmpting to stop container 1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169
 2024/09/08 02:21:59 Stopped and removed container 1e06640f2f758780337551b0fb6af5819ce2ab79e192bacb98e55a8714c62169 for task 21b23589-5d2d-4731-b5c9-a97e9832d021
 2024/09/08 02:21:59 Sleeping 10 time seconds
-
+```
 ### Search task list again
 
 ```
@@ -124,6 +125,7 @@ curl -v localhost:5556/tasks
 ]
 ```
 ### check if the container has been stopped and removed
-
+```
 $ docker ps -a
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
