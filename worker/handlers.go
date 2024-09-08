@@ -74,3 +74,25 @@ func (a *Api) GetStatsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(a.Worker.Stats)
 }
+
+func (a *Api) InspectTaskHandler(w http.ResponseWriter, r *http.Request) {
+	taskID := chi.URLParam(r, "taskID")
+	if taskID == "" {
+		log.Printf("No taskID passed in request.\n")
+		w.WriteHeader(400)
+	}
+
+	tID, _ := uuid.Parse(taskID)
+	t, ok := a.Worker.Db[tID]
+	if !ok {
+		log.Printf("No task with ID %v found", tID)
+		w.WriteHeader(404)
+		return
+	}
+
+	resp := a.Worker.InspectTask(*t)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(resp.Container)
+}

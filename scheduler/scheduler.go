@@ -2,9 +2,13 @@ package scheduler
 
 import (
 	"cube/node"
+	"cube/stats"
 	"cube/task"
+	"encoding/json"
+	"fmt"
 	"log"
 	"math"
+	"net/http"
 	"time"
 )
 
@@ -130,13 +134,58 @@ type Epvm struct {
 }
 
 func (e *Epvm) SelectCandidateNodes(t task.Task, nodes []*node.Node) []*node.Node {
-	return nil
+	var candidates []*node.Node
+	for node := range nodes {
+		if checkDisk(t, nodes[node].Disk-nodes[node].DiskAllocated) {
+			candidates = append(candidates, nodes[node])
+		}
+	}
+	return candidates
 }
+
 func (e *Epvm) Score(t task.Task, nodes []*node.Node) map[string]float64 {
-	return nil
+	nodeScores := make(map[string]float64)
+	maxJobs := 4.0
+
+	for _, node := range nodes {
+		cpuUsage, err := calculateCpuUsage(node)
+		if err != nil {
+			log.Printf("error calculating CPU usage for node %s, skipping: %v\n", node.Name, err)
+			continue
+		}
+		cpuLoad := calculateLoad(*cpuUsage, math.Pow(2, 0.8))
+
+		memoryAllocated := float64(node.Stats.MemUsedKb()) + float64(node.MemoryAllocated)
+		memoryPercentAllocated := memoryAllocated / float64(node.Memory)
+
+		newMemPercent := calculateLoad(memoryAllocated+float64(t.Memory/1000), float64(node.Memory))
+		memCost := math.Pow(LIEB, newMemPercent) + math.Pow(LIEB, (float64(node.TaskCount+1))/maxJobs) - math.Pow(LIEB, memoryPercentAllocated) - math.Pow(LIEB, float64(node.TaskCount)/float64(maxJobs))
+		cpuCost := math.Pow(LIEB, cpuLoad) + math.Pow(LIEB, (float64(node.TaskCount+1))/maxJobs) - math.Pow(LIEB, cpuLoad) - math.Pow(LIEB, float64(node.TaskCount)/float64(maxJobs))
+
+		nodeScores[node.Name] = memCost + cpuCost
+	}
+
+	return nodeScores
 }
+
 func (e *Epvm) Pick(scores map[string]float64, candidates []*node.Node) *node.Node {
-	return nil
+	minCost := 0.0
+
+	var bestNode *node.Node
+	for idx, node := range candidates {
+		if idx == 0 {
+			minCost = scores[node.Name]
+			bestNode = node
+			continue
+		}
+
+		if scores[node.Name] < minCost {
+			minCost = scores[node.Name]
+			bestNode = node
+		}
+	}
+
+	return bestNode
 }
 
 func selectCandidateNodes(t task.Task, nodes []*node.Node) []*node.Node {
@@ -191,4 +240,24 @@ func calculateCpuUsage(node *node.Node) (*float64, error) {
 	}
 
 	return &cpuPercentUsage, nil
+}
+
+func getNodeStats(node *node.Node) *stats.Stats {
+	url := fmt.Sprintf("%s/stats", node.Api)
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Printf("Error connecting to %v: %v", node.Api, err)
+	}
+
+	if resp.StatusCode != 200 {
+		log.Printf("Error retrieving stats from %v: %v", node.Api, err)
+	}
+	defer resp.Body.Close()
+
+	var stats *stats.Stats
+	if err = json.NewDecoder(resp.Body).Decode(&stats); err != nil {
+		return nil
+	}
+
+	return stats
 }
