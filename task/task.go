@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -137,10 +138,22 @@ func (d *Docker) Run() DockerResult {
 		ExposedPorts: d.Config.ExposedPorts,
 	}
 
+	portBindings := nat.PortMap{}
+	for hostPort := range d.Config.ExposedPorts {
+		splits := strings.Split(hostPort.Port(), "/") // port/protocol
+		portBindings[nat.Port(hostPort)] = []nat.PortBinding{
+			{
+				HostIP:   "0.0.0.0",
+				HostPort: splits[0],
+			},
+		}
+	}
+
 	hc := container.HostConfig{
 		RestartPolicy:   rp,
 		Resources:       r,
 		PublishAllPorts: true,
+		PortBindings:    portBindings,
 	}
 
 	resp, err := d.Client.ContainerCreate(ctx, &cc, &hc, nil, nil, d.Config.Name)
