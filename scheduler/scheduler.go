@@ -204,12 +204,14 @@ func calculateCpuUsage(node *node.Node) (*float64, error) {
 	//stat1 := getNodeStats(node)
 	stat1, err := node.GetStats()
 	if err != nil {
+		log.Printf("node GetStates1 failed: err: %s\n", err.Error())
 		return nil, err
 	}
 	time.Sleep(3 * time.Second)
 	//stat2 := getNodeStats(node)
 	stat2, err := node.GetStats()
 	if err != nil {
+		log.Printf("node GetStates2 failed: err: %s\n", err.Error())
 		return nil, err
 	}
 

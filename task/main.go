@@ -19,5 +19,5 @@ func main() {
 	}
 
 	log.Printf("docker client created: %v\n", dc)
-	d.Run()
+	d.Run(map[string]string{})
 }

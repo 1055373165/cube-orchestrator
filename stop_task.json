@@ -1,10 +1,10 @@
 {
     "ID": "6be4cb6b-61d1-40cb-bc7b-9cacefefa60c",
-    "State": 2,
+    "State": 3,
     "Task": {
-        "State": 3, 
+        "State": 2, 
         "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203", 
-	    "ContainerID": "d72016f22d531ce713fb1673a1cc6e7d52b77bc743774861afb0c3a094283333",
+	    "ContainerID": "1504351ad1d291c5ee50cfc19d9537268ad730df6d7c3ef4daeeb7e2b75c788b",
         "Name": "test-chapter-9.1", 
         "Image": "sun4965485/echo-smy:v1"
     }

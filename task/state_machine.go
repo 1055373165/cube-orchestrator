@@ -1,5 +1,7 @@
 package task
 
+import "log"
+
 type State int
 
 const (
@@ -24,6 +26,7 @@ func Contains(states []State, state State) bool {
 			return true
 		}
 	}
+	log.Printf("contains return false")
 	return false
 }
 

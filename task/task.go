@@ -6,7 +6,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -20,15 +19,17 @@ import (
 )
 
 type Task struct {
-	ID            uuid.UUID
-	ContainerID   string
-	Name          string
-	State         State
-	Image         string
-	CPU           float64
-	Memory        int64
-	Disk          int64
-	ExposedPorts  nat.PortSet
+	ID          uuid.UUID
+	ContainerID string
+	Name        string
+	State       State
+	Image       string
+	CPU         float64
+	Memory      int64
+	Disk        int64
+	// 这是容器镜像中声明的端口，表示容器内部暴露的端口。例如，"7777/tcp": {} 表示容器内部的 7777 端口使用 TCP 协议。
+	ExposedPorts nat.PortSet
+	// 这是 Docker 容器启动时的端口绑定配置，表示将容器内部的端口映射到主机上的端口。例如，"7777/tcp": "7777" 表示将容器内部的 7777 端口映射到主机上的 7777 端口。
 	HostPorts     nat.PortMap
 	PortBindings  map[string]string
 	RestartPolicy string
@@ -112,8 +113,9 @@ type DockerInspectResponse struct {
 	Container *types.ContainerJSON
 }
 
-func (d *Docker) Run() DockerResult {
+func (d *Docker) Run(portBinds map[string]string) DockerResult {
 	ctx := context.Background()
+	// Pull the image
 	reader, err := d.Client.ImagePull(
 		ctx, d.Config.Image, image.PullOptions{})
 	if err != nil {
@@ -122,15 +124,24 @@ func (d *Docker) Run() DockerResult {
 	}
 	io.Copy(os.Stdout, reader)
 
+	// Set restart policy
 	rp := container.RestartPolicy{
 		Name: container.RestartPolicyMode(d.Config.RestartPolicy),
 	}
 
+	// Set resource limits
 	r := container.Resources{
 		Memory:   d.Config.Memory,
 		NanoCPUs: int64(d.Config.CPU * math.Pow(10, 9)), // CPU quota in units of 10<sup>-9</sup> CPUs.
 	}
 
+	// Set exposed ports
+	exposedPorts := nat.PortSet{}
+	for port := range d.Config.ExposedPorts {
+		exposedPorts[nat.Port(port)] = struct{}{}
+	}
+
+	// Set container config
 	cc := container.Config{
 		Image:        d.Config.Image,
 		Tty:          false,
@@ -138,17 +149,19 @@ func (d *Docker) Run() DockerResult {
 		ExposedPorts: d.Config.ExposedPorts,
 	}
 
+	// Set port bindings
 	portBindings := nat.PortMap{}
-	for hostPort := range d.Config.ExposedPorts {
-		splits := strings.Split(hostPort.Port(), "/") // port/protocol
-		portBindings[nat.Port(hostPort)] = []nat.PortBinding{
+	// "7777/tcp": "7778"
+	for containerPort, hostPort := range portBinds {
+		portBindings[nat.Port(containerPort)] = []nat.PortBinding{
 			{
-				HostIP:   "0.0.0.0",
-				HostPort: splits[0],
+				HostIP:   "127.0.0.1",
+				HostPort: hostPort,
 			},
 		}
 	}
 
+	// Set host config
 	hc := container.HostConfig{
 		RestartPolicy:   rp,
 		Resources:       r,
@@ -156,6 +169,7 @@ func (d *Docker) Run() DockerResult {
 		PortBindings:    portBindings,
 	}
 
+	// Create the container
 	resp, err := d.Client.ContainerCreate(ctx, &cc, &hc, nil, nil, d.Config.Name)
 	if err != nil {
 		log.Printf("Error creating container using image %s: %v\n",
@@ -163,12 +177,14 @@ func (d *Docker) Run() DockerResult {
 		return DockerResult{Error: err}
 	}
 
+	// Start the container
 	err = d.Client.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	if err != nil {
 		log.Printf("Error starting container %s: %v\n", resp.ID, err)
 		return DockerResult{Error: err}
 	}
 
+	// Get container logs
 	out, err := d.Client.ContainerLogs(ctx, resp.ID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -220,6 +236,5 @@ func (d *Docker) Inspect(containerID string) DockerInspectResponse {
 		log.Printf("Error inspecting container: %s\n", err)
 		return DockerInspectResponse{Error: err}
 	}
-
 	return DockerInspectResponse{Container: &resp}
 }

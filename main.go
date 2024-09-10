@@ -24,18 +24,21 @@ func main() {
 	wapi2 := worker.Api{Address: whost, Port: wport + 1, Worker: w2}
 
 	w3 := worker.New("worker-3", "memory")
-	wapi3 := worker.Api{Address: whost, Port: wport, Worker: w3}
+	wapi3 := worker.Api{Address: whost, Port: wport + 2, Worker: w3}
 
 	go w1.RunTasks()
 	go w1.UpdateTasks()
+	go w1.CollectStats()
 	go wapi1.Start()
 
 	go w2.RunTasks()
 	go w2.UpdateTasks()
+	go w2.CollectStats()
 	go wapi2.Start()
 
 	go w3.RunTasks()
 	go w3.UpdateTasks()
+	go w3.CollectStats()
 	go wapi3.Start()
 
 	fmt.Println("Starting Cube namager")

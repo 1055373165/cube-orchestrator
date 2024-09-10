@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/docker/go-connections/nat"
@@ -169,22 +168,37 @@ func (m *Manager) DoHealthChecks() {
 }
 
 func (m *Manager) doHealthChecks() {
-	for _, t := range m.GetTasks() {
-		if t.State == task.Running && t.RestartCount < 3 {
-			err := m.checkTaskHealth(*t)
-			if err != nil {
-				if t.RestartCount < 3 {
-					m.restartTask(t)
+	for _, worker := range m.Workers {
+		var tasks []*task.Task
+		url := fmt.Sprintf("http://%s/tasks/", worker)
+		log.Printf("url is : %s\n", url)
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Printf("request worker %s to query tasks failed, err: %s\n", worker, err.Error())
+			continue
+		}
+		err = json.NewDecoder(resp.Body).Decode(&tasks)
+		if err != nil {
+			log.Printf("resp.Body unmarshal to tasks: %s\n", err.Error())
+			continue
+		}
+		for _, t := range tasks {
+			if t.State == task.Running && t.RestartCount < 3 {
+				err := m.checkTaskHealth(*t)
+				if err != nil {
+					if t.RestartCount < 3 {
+						m.restartTask(t)
+					}
 				}
+			} else if t.State == task.Failed && t.RestartCount < 3 {
+				m.restartTask(t)
 			}
-		} else if t.State == task.Failed && t.RestartCount < 3 {
-			m.restartTask(t)
 		}
 	}
 }
 
 func (m *Manager) restartTask(t *task.Task) {
-	w := m.WorkerTaskMap[t.ID.String()]
+	w := m.TaskWorkerMap[t.ID]
 	t.State = task.Scheduled
 	t.RestartCount++
 	m.TaskDb.Put(t.ID.String(), t)
@@ -285,7 +299,6 @@ func (m *Manager) SendWork() {
 			log.Printf("unable to convert task to task.Task type\n")
 			return
 		}
-
 		if te.State == task.Completed && task.ValidStateTransition(persistedTask.State, te.State) {
 			m.stopTask(taskWorker, te.Task.ID.String())
 			return
@@ -352,16 +365,18 @@ func (m *Manager) SendWork() {
 func (m *Manager) checkTaskHealth(t task.Task) error {
 	log.Printf("Calling health check for task %s: %s\n", t.ID, t.HealthCheck)
 
-	w := m.TaskWorkerMap[t.ID]
-	hostPort := getHostPort(t.HostPorts)
-	worker := strings.Split(w, ":")
-	if hostPort == nil {
-		log.Printf("Have not collected task %s host port yet. Skipping.\n", t.ID)
-		return nil
-	}
+	// w := m.TaskWorkerMap[t.ID]
+	// hostPort := getHostPort(t.HostPorts)
+	// worker := strings.Split(w, ":")
+	// if hostPort == nil {
+	// 	log.Printf("Have not collected task %s host port yet. Skipping.\n", t.ID)
+	// 	return nil
+	// }
+	// log.Printf("task %s getHostPort %v:", t.ID.String(), *hostPort)
 
-	url := fmt.Sprintf("http://%s:%s%s", worker[0], *hostPort, t.HealthCheck)
-	log.Printf("Calling health check for task %s: %s\n", t.ID, url)
+	// url := fmt.Sprintf("http://%s:%s%s", worker[0], *hostPort, t.HealthCheck)
+	url := fmt.Sprintf("http://%s:%s%s", "localhost", t.PortBindings["7777/tcp"], t.HealthCheck)
+	log.Printf("Calling health check for worker %s task %s: %s\n", "localhost", t.ID.String(), url)
 	resp, err := http.Get(url)
 	if err != nil {
 		msg := fmt.Sprintf("Error connecting to health check %s", url)

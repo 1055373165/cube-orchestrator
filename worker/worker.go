@@ -157,12 +157,13 @@ func (w *Worker) updateTasks() {
 			if resp.Error != nil {
 				fmt.Printf("Error: %v\n", resp.Error)
 			}
-
 			if resp.Container == nil {
 				log.Printf("No container for running task %s\n", t.ID.String())
 				t.State = task.Failed
 				w.Db.Put(t.ID.String(), t)
 			}
+
+			log.Printf("updateTasks return resp Networking is %#v", resp.Container.NetworkSettings.Ports)
 
 			if resp.Container.State.Status == "exited" {
 				log.Printf("Container for task %s in non-running state %s\n", t.ID, resp.Container.State.Status)
@@ -170,6 +171,7 @@ func (w *Worker) updateTasks() {
 				w.Db.Put(t.ID.String(), t)
 			}
 
+			// Ports 包含了容器的端口映射信息。这些信息对应于任务配置中的 ExposedPorts 和 PortBindings。
 			t.HostPorts = resp.Container.NetworkSettings.NetworkSettingsBase.Ports
 			w.Db.Put(t.ID.String(), t)
 		}
@@ -189,7 +191,7 @@ func (w *Worker) StartTask(t task.Task) task.DockerResult {
 	c := task.NewConfig(&t)
 	d := task.NewDocker(c)
 
-	result := d.Run()
+	result := d.Run(t.PortBindings)
 	if result.Error != nil {
 		log.Printf("Error running task %v: %v\n", t.ID, result.Error)
 		t.State = task.Failed
