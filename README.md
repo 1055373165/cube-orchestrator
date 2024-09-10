@@ -24,7 +24,7 @@ curl -v --request POST --header 'Content-Type: application/json' --data @task4.j
 curl -v --request POST --header 'Content-Type: application/json' --data @stop_task.json http://127.0.0.1:5556/tasks
 ```
 
-#### Log Output
+#### Log 
 ```
 2024/09/11 07:38:09 Add event {a7aa1d44-08f6-443e-9378-f5884311018e 2 0001-01-01 00:00:00 +0000 UTC {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} to pending queue
 2024/09/11 07:38:09 Added task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
@@ -40,12 +40,14 @@ curl -v --request POST --header 'Content-Type: application/json' --data @stop_ta
 
 ## All running tasks
 
-### Log Output
+### Log 
+```
 [worker] Found task in queue: {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}
 {"status":"Pulling from sun4965485/echo-smy","id":"v1"}
 {"status":"Digest: sha256:b3a6951a31ab9ba821c95815ccc16de992fd00019fab37ed607514e61cf6f6fe"}
 {"status":"Status: Image is up to date for sun4965485/echo-smy:v1"}
 2024/09/11 07:38:29 task bb1d59ef-9fc1-4e4b-a44d-db571eeed203 Running on container 1504351ad1d291c5ee50cfc19d9537268ad730df6d7c3ef4daeeb7e2b75c788b
+```
 
 ### List task
 ```
@@ -177,8 +179,6 @@ ba718d096964   sun4965485/echo-smy:v1   "/app/echo"   5 minutes ago   Up 5 minut
 
 ```
 2024/09/11 07:26:56 collect stats from worker http://127.0.0.1:5000 success, CPU detail: linux.CPUStat{Id:cpu, User:338868, Nice:1029, System:107121, Idle:3540676, IOWait:7454, IRQ:0, SoftIRQ:4443, Steal:0, Guest:0, GuestNice:0}
-
 2024/09/11 07:26:56 collect stats from worker http://127.0.0.1:5000 success, Disk detail: linux.Disk{All:66205626368, Used:17017856000, Free:49187770368, FreeInodes:3723900}
-
 2024/09/11 07:26:56 collect stats from worker http://127.0.0.1:5000 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:93108, MemAvailable:536020, Buffers:23580, Cached:623660, SwapCached:54440, Active:812156, Inactive:683684, ActiveAnon:504656, InactiveAnon:529904, ActiveFile:307500, InactiveFile:153780, Unevictable:177560, Mlocked:80, SwapTotal:2097148, SwapFree:1146984, Dirty:536, Writeback:0, AnonPages:1008156, Mapped:204116, Shmem:185960, Slab:163100, SReclaimable:71744, SUnreclaim:91356, KernelStack:11008, PageTables:27076, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:7552064, VmallocTotal:133143592960, VmallocUsed:29268, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
 ```
