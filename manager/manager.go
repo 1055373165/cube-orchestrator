@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
 )
@@ -69,11 +68,22 @@ func New(workers []string, schedulerType string, dbType string) *Manager {
 
 	var ts store.Store
 	var es store.Store
+	var err error
 	switch dbType {
 	case "memory":
 		ts = store.NewInMemoryTaskStore()
 		es = store.NewInMemoryTaskEventStore()
+	case "persistent":
+		ts, err = store.NewTaskStore("task.db", 0600, "tasks")
+		if err != nil {
+			log.Printf("new task store failed, %s\n", err.Error())
+		}
+		es, err = store.NewTaskEventStore("events.db", 0600, "events")
+		if err != nil {
+			log.Printf("new task event store failed, %s\n", err.Error())
+		}
 	}
+
 	m.TaskDb = ts  // task uuid -> task object
 	m.EventDb = es // event uuid -> task event object
 
@@ -364,17 +374,6 @@ func (m *Manager) SendWork() {
 
 func (m *Manager) checkTaskHealth(t task.Task) error {
 	log.Printf("Calling health check for task %s: %s\n", t.ID, t.HealthCheck)
-
-	// w := m.TaskWorkerMap[t.ID]
-	// hostPort := getHostPort(t.HostPorts)
-	// worker := strings.Split(w, ":")
-	// if hostPort == nil {
-	// 	log.Printf("Have not collected task %s host port yet. Skipping.\n", t.ID)
-	// 	return nil
-	// }
-	// log.Printf("task %s getHostPort %v:", t.ID.String(), *hostPort)
-
-	// url := fmt.Sprintf("http://%s:%s%s", worker[0], *hostPort, t.HealthCheck)
 	url := fmt.Sprintf("http://%s:%s%s", "localhost", t.PortBindings["7777/tcp"], t.HealthCheck)
 	log.Printf("Calling health check for worker %s task %s: %s\n", "localhost", t.ID.String(), url)
 	resp, err := http.Get(url)
@@ -407,11 +406,4 @@ func (m *Manager) GetTasks() []*task.Task {
 func (m *Manager) AddTask(te task.TaskEvent) {
 	log.Printf("Add event %v to pending queue", te)
 	m.Pending.Enqueue(te)
-}
-
-func getHostPort(ports nat.PortMap) *string {
-	for k := range ports {
-		return &ports[k][0].HostPort
-	}
-	return nil
 }
