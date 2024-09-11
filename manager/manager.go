@@ -74,11 +74,11 @@ func New(workers []string, schedulerType string, dbType string) *Manager {
 		ts = store.NewInMemoryTaskStore()
 		es = store.NewInMemoryTaskEventStore()
 	case "persistent":
-		ts, err = store.NewTaskStore("task.db", 0600, "tasks")
+		ts, err = store.NewTaskStore("db/task.db", 0600, "tasks")
 		if err != nil {
 			log.Printf("new task store failed, %s\n", err.Error())
 		}
-		es, err = store.NewTaskEventStore("events.db", 0600, "events")
+		es, err = store.NewTaskEventStore("db/events.db", 0600, "events")
 		if err != nil {
 			log.Printf("new task event store failed, %s\n", err.Error())
 		}
