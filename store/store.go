@@ -172,7 +172,7 @@ func (ts *TaskStore) Put(key string, value interface{}) error {
 }
 
 func (ts *TaskStore) List() (interface{}, error) {
-	var tasks []task.Task
+	var tasks []*task.Task
 	err := ts.Db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ts.Bucket))
 		err := b.ForEach(func(k, v []byte) error {
@@ -181,7 +181,7 @@ func (ts *TaskStore) List() (interface{}, error) {
 			if err != nil {
 				return err
 			}
-			tasks = append(tasks, task)
+			tasks = append(tasks, &task)
 			return nil
 		})
 		return err
@@ -215,25 +215,24 @@ type TaskEventStore struct {
 	Bucket   string
 }
 
-func NewTaskEventStore(filename string, mode os.FileMode, bucket string) (*TaskEventStore, error) {
-	db, err := bolt.Open(filename, mode, nil)
+func NewTaskEventStore(file string, mode os.FileMode, bucket string) (*TaskEventStore, error) {
+	db, err := bolt.Open(file, mode, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to open %v", file)
 	}
-
-	t := &TaskEventStore{
-		DbFile:   filename,
-		Db:       db,
+	e := TaskEventStore{
+		DbFile:   file,
 		FileMode: mode,
+		Db:       db,
 		Bucket:   bucket,
 	}
 
-	err = t.CreateBucket()
+	err = e.CreateBucket()
 	if err != nil {
-		return nil, fmt.Errorf("create bucket %s: %s", t.Bucket, err)
+		log.Printf("bucket already exists, will use it instead of creating new one")
 	}
 
-	return t, nil
+	return &e, nil
 }
 
 func (tes *TaskEventStore) Close() {
@@ -271,10 +270,12 @@ func (e *TaskEventStore) Get(key string) (interface{}, error) {
 func (e *TaskEventStore) Put(key string, value interface{}) error {
 	return e.Db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(e.Bucket))
-		buf, err := json.Marshal(value.(*task.Task))
+
+		buf, err := json.Marshal(value.(task.TaskEvent))
 		if err != nil {
 			return err
 		}
+
 		err = b.Put([]byte(key), buf)
 		if err != nil {
 			log.Printf("unable to save item %s", key)

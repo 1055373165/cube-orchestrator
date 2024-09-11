@@ -82,6 +82,7 @@ func New(workers []string, schedulerType string, dbType string) *Manager {
 		if err != nil {
 			log.Printf("new task event store failed, %s\n", err.Error())
 		}
+	default:
 	}
 
 	m.TaskDb = ts  // task uuid -> task object
@@ -294,7 +295,8 @@ func (m *Manager) SendWork() {
 
 	e := m.Pending.Dequeue()
 	te := e.(task.TaskEvent)
-	m.EventDb.Put(te.ID.String(), &te)
+	m.EventDb.Put(te.ID.String(), te)
+
 	log.Printf("Pulled %v off pending queue\n", te)
 
 	taskWorker, ok := m.TaskWorkerMap[te.Task.ID]
