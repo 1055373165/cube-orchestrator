@@ -26,10 +26,11 @@ var workerCmd = &cobra.Command{
 		host, _ := cmd.Flags().GetString("host")
 		port, _ := cmd.Flags().GetInt("port")
 		name, _ := cmd.Flags().GetString("name")
-		dbType, _ := cmd.Flags().GetString("dbType")
+		dbType, _ := cmd.Flags().GetString("dbtype")
 
 		log.Println("starting worker.")
 		w := worker.New(name, dbType)
+
 		api := worker.Api{Address: host, Port: port, Worker: w}
 		go w.RunTasks()
 		go w.CollectStats()

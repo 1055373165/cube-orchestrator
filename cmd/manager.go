@@ -34,7 +34,7 @@ The manager controls the orchestration system and is responsible for:
 		go m.ProcessTasks()
 		go m.UpdateTasks()
 		go m.DoHealthChecks()
-		// go m.UpdateNodeStats()
+		go m.UpdateNodeStats()
 		log.Printf("Starting manager API on http://%s:%d", host, port)
 		api.Start()
 	},
@@ -45,6 +45,6 @@ func init() {
 	managerCmd.Flags().StringP("host", "H", "0.0.0.0", "Hostname or IP addrese")
 	managerCmd.Flags().IntP("port", "p", 5556, "Port on which to listen")
 	managerCmd.Flags().StringSliceP("workers", "w", []string{"localhost:5000"}, "List of worker on which the manager will schedule tasks.")
-	managerCmd.Flags().StringP("scheduler", "s", "epvm", "Name of sceduler to use.")
+	managerCmd.Flags().StringP("scheduler", "s", "roundrobin", "Name of sceduler to use.")
 	managerCmd.Flags().StringP("dbType", "d", "memory", "Type of datastore to use for events and tasks (\"memory\" or \"persistent\")")
 }

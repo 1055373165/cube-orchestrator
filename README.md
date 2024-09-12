@@ -4,183 +4,148 @@ cube-orchestrator is the core implementation of the container scheduler.
 
 ## Start And API Test
 
-> start docker desktop Engine on your computer
+1. start docker desktop Engine on your computer
 
-### Service start
+2. `go build -o cube main.go`
+
+3. `go install` (Make sure that $GOPATH/bin or $GOBIN has been added to your PATH environment variable)
+
+4. start three worker using cube cli
 
 ```
-CUBE_WORKER_HOST=127.0.0.1 \
-CUBE_WORKER_PORT=5000 \
-CUBE_MANAGER_HOST=127.0.0.1 \
-CUBE_MANAGER_PORT=5556 \
-go run main.go
-```
-### POST new task
-
-#### Command
-```
-curl -v --request POST --header 'Content-Type: application/json' --data @task1.json localhost:5556/tasks
-curl -v --request POST --header 'Content-Type: application/json' --data @task2.json localhost:5556/tasks
-curl -v --request POST --header 'Content-Type: application/json' --data @task3.json localhost:5556/tasks
-curl -v --request POST --header 'Content-Type: application/json' --data @task4.json localhost:5556/tasks
-curl -v --request POST --header 'Content-Type: application/json' --data @task5.json localhost:5556/tasks
+cube worker --host 127.0.0.1 --port 5000 --dbtype "persistent"
+cube worker --host 127.0.0.1 --port 5001 --dbtype "persistent"
+cube worker --host 127.0.0.1 --port 5002 --dbtype "persistent"
 ```
 
-#### Log 
+5. start manager to receive task request and scedule to different worker
+
+> cube manager -w 'localhost:5000,localhost:5001,localhost:5002'
+
+6. simulate a user to send a task to the manager
+
 ```
-2024/09/11 07:38:09 Add event {a7aa1d44-08f6-443e-9378-f5884311018e 2 0001-01-01 00:00:00 +0000 UTC {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} to pending queue
-2024/09/11 07:38:09 Added task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
-2024/09/11 07:38:09 Add event {a7aa1d44-08f6-443e-9378-f5884311019e 2 0001-01-01 00:00:00 +0000 UTC {21b23589-5d2d-4731-b5c9-a97e9832d021  test-chapter-9.2 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7779]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} to pending queue
-2024/09/11 07:38:09 Added task 21b23589-5d2d-4731-b5c9-a97e9832d021
-2024/09/11 07:38:09 Add event {a7aa1d44-08f6-443e-9378-f5884311719e 2 0001-01-01 00:00:00 +0000 UTC {95fbe134-7f19-496a-acfc-c7853e5b4cd2  test-chapter-9.3 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7800]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} to pending queue
-2024/09/11 07:38:09 Added task 95fbe134-7f19-496a-acfc-c7853e5b4cd2
-2024/09/11 07:38:09 Add event {a7aa1d44-08f6-443e-9378-f5864313419e 2 0001-01-01 00:00:00 +0000 UTC {95fbe134-7f19-496a-acfc-c7753e5b4cd2  test-chapter-9.4 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7801]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} to pending queue
-2024/09/11 07:38:09 Added task 95fbe134-7f19-496a-acfc-c7753e5b4cd2
-2024/09/11 07:38:16 Processing any tasks in the queue
-2024/09/11 07:38:16 Pulled {a7aa1d44-08f6-443e-9378-f5884311018e 2 0001-01-01 00:00:00 +0000 UTC {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} off pending queues
+cube run -m "localhost:5556" -f "task1.json"
+cube run -m "localhost:5556" -f "task2.json"
+cube run -m "localhost:5556" -f "task3.json"
+cube run -m "localhost:5556" -f "task4.json"
+cube run -m "localhost:5556" -f "task5.json"
 ```
 
-## All running tasks
+7. check node state
 
-### Log 
 ```
-[worker] Found task in queue: {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}
+$ cube node                                                                   
+NAME               MEMORY (MiB)     DISK (GiB)     ROLE       TASKS     
+localhost:5000     2014             66             worker     1         
+localhost:5001     2014             66             worker     2         
+localhost:5002     2014             66             worker     1 
+// because three worker running on same machine
+```
+
+8. check task state
+
+```
+$ cube status
+ID                                       NAME                 CREATED                    STATE       CONTAINERNAME        IMAGE                      
+95fbe134-7f19-468a-acfc-c7753e5b4cd2     test-chapter-9.5     Less than a second ago     Running     test-chapter-9.5     sun4965485/echo-smy:v1     
+bb1d59ef-9fc1-4e4b-a44d-db571eeed203     test-chapter-9.1     Less than a second ago     Running     test-chapter-9.1     sun4965485/echo-smy:v1     
+21b23589-5d2d-4731-b5c9-a97e9832d021     test-chapter-9.2     Less than a second ago     Running     test-chapter-9.2     sun4965485/echo-smy:v1     
+95fbe134-7f19-496a-acfc-c7853e5b4cd2     test-chapter-9.3     Less than a second ago     Running     test-chapter-9.3     sun4965485/echo-smy:v1     
+95fbe134-7f19-496a-acfc-c7753e5b4cd2     test-chapter-9.4     Less than a second ago     Running     test-chapter-9.4     sun4965485/echo-smy:v1
+```
+
+9. stop task
+
+```
+cube stop 21b23589-5d2d-4731-b5c9-a97e9832d021
+2024/09/12 16:49:36 Task 21b23589-5d2d-4731-b5c9-a97e9832d021 has been stopped.
+
+cube status
+21b23589-5d2d-4731-b5c9-a97e9832d021     test-chapter-9.2     Less than a second ago     Completed     test-chapter-9.2     sun4965485/echo-smy:v1 
+```
+
+## Other ability
+
+### Container port probe
+
+```
+2024/09/12 16:49:32 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7779"}}}
+2024/09/12 16:49:32 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7802"}}}
+2024/09/12 16:49:32 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7801"}}}
+2024/09/12 16:49:32 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7800"}}}
+2024/09/12 16:49:32 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7778"}}}
+```
+
+### Update task state
+
+```
+2024/09/12 16:46:27 Attempting to update task 21b23589-5d2d-4731-b5c9-a97e9832d021
+2024/09/12 16:46:27 Attempting to update task 95fbe134-7f19-468a-acfc-c7753e5b4cd2
+2024/09/12 16:46:27 Attempting to update task 95fbe134-7f19-496a-acfc-c7753e5b4cd2
+2024/09/12 16:46:27 Attempting to update task 95fbe134-7f19-496a-acfc-c7853e5b4cd2
+2024/09/12 16:46:27 Attempting to update task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+```
+
+### Task scedule
+
+```
+manager log:
+2024/09/12 17:29:19 Add event {a7aa1d44-08f6-443e-9378-f5884311018e 2 0001-01-01 00:00:00 +0000 UTC {bb1d59ef-9fc1-4e4b-a44d-db571eeed203  test-chapter-9.1 1 sun4965485/echo-smy:v1 0 0 0 map[7777/tcp:{}] map[] map[7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}} to pending queue
+2024/09/12 17:29:19 Added task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+2024/09/12 17:29:27 [manager] selected worker localhost:5001 for task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+2024/09/12 17:29:27 [manager] received response from worker
+
+worker log:
+2024/09/12 17:29:27 Added task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
+7777/tcp:7778]  0001-01-01 00:00:00 +0000 UTC 0001-01-01 00:00:00 +0000 UTC /health 0}
 {"status":"Pulling from sun4965485/echo-smy","id":"v1"}
 {"status":"Digest: sha256:b3a6951a31ab9ba821c95815ccc16de992fd00019fab37ed607514e61cf6f6fe"}
 {"status":"Status: Image is up to date for sun4965485/echo-smy:v1"}
-2024/09/11 07:38:29 task bb1d59ef-9fc1-4e4b-a44d-db571eeed203 Running on container 1504351ad1d291c5ee50cfc19d9537268ad730df6d7c3ef4daeeb7e2b75c788b
+2024/09/12 17:29:30 task bb1d59ef-9fc1-4e4b-a44d-db571eeed203 Running on container 618b99d1610c99fbf24b115f41a2cd3a893323c2dff64c4c8eb7da294c1cd2b9
+2024/09/12 17:29:43 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7778"}}}
 ```
 
-### List task
+### One-click container cleaning     
 ```
-* Connection #0 to host localhost left intact
-[
-    {
-    "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203",
-    "ContainerID": "1504351ad1d291c5ee50cfc19d9537268ad730df6d7c3ef4daeeb7e2b75c788b",
-    "Name": "test-chapter-9.1",
-    "State": 2, // Running 
-    "Image": "sun4965485/echo-smy:v1",
-    "CPU": 0,
-    "Memory": 0,
-    "Disk": 0,
-    "ExposedPorts": {
-      "7777/tcp": {}
-    },
-    "HostPorts": null,
-    "PortBindings": {
-      "7777/tcp": "7778"
-    },
-    "RestartPolicy": "",
-    "StartTime": "0001-01-01T00:00:00Z",
-    "FinishTime": "0001-01-01T00:00:00Z",
-    "HealthCheck": "/health",
-    "RestartCount": 0
-  },
-  ....
-]
+$ cube prune                               
+Stopping container d4ab751fdd1d...
+2024/09/12 17:20:24 Container d4ab751fdd1d stopped: d4ab751fdd1d
+2024/09/12 17:20:24 Container d4ab751fdd1d removed: d4ab751fdd1d
+
+Stopping container 700cc7b217b4...
+2024/09/12 17:20:24 Container 700cc7b217b4 stopped: 700cc7b217b4
+2024/09/12 17:20:24 Container 700cc7b217b4 removed: 700cc7b217b4
+
+Stopping container 32ec47f15d30...
+2024/09/12 17:20:25 Container 32ec47f15d30 stopped: 32ec47f15d30
+2024/09/12 17:20:25 Container 32ec47f15d30 removed: 32ec47f15d30
+
+Stopping container 8948cacd7e29...
+2024/09/12 17:20:25 Container 8948cacd7e29 stopped: 8948cacd7e29
+2024/09/12 17:20:25 Container 8948cacd7e29 removed: 8948cacd7e29
 ```
 
-## Simulate task over
-
-### construct stop_task.json
+### Collect cpu, disk and memory stat
 
 ```
-{
-    "ID": "6be4cb6b-61d1-40cb-bc7b-9cacefefa60c",
-    "State": 3,
-    "Task": {
-        "State": 2, 
-        "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203", 
-	    "ContainerID": "1504351ad1d291c5ee50cfc19d9537268ad730df6d7c3ef4daeeb7e2b75c788b",
-        "Name": "test-chapter-9.1", 
-        "Image": "sun4965485/echo-smy:v1"
-    }
-}
+2024/09/12 19:14:27 collect stats from worker http://localhost:5000 success, CPU detail: linux.CPUStat{Id:cpu, User:1031250, Nice:1541, System:399910, Idle:18235973, IOWait:14744, IRQ:0, SoftIRQ:11676, Steal:0, Guest:0, GuestNice:0}
+2024/09/12 19:14:27 collect stats from worker http://localhost:5000 success, Disk detail: linux.Disk{All:66205626368, Used:17241092096, Free:48964534272, FreeInodes:3702938}
+2024/09/12 19:14:27 collect stats from worker http://localhost:5000 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:92044, MemAvailable:545224, Buffers:25916, Cached:649952, SwapCached:54664, Active:791872, Inactive:635028, ActiveAnon:455416, InactiveAnon:525576, ActiveFile:336456, InactiveFile:109452, Unevictable:223784, Mlocked:80, SwapTotal:2097148, SwapFree:1155720, Dirty:244, Writeback:0, AnonPages:961424, Mapped:200268, Shmem:229960, Slab:193996, SReclaimable:97384, SUnreclaim:96612, KernelStack:11248, PageTables:28808, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:7954852, VmallocTotal:133143592960, VmallocUsed:29556, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
 ```
 
-### Command
-
-> curl -v --request POST --header 'Content-Type: application/json' --data @stop_task.json http://127.0.0.1:5556/tasks 
-
-### task status
+### Health probe
 
 ```
-{
-    "ID": "bb1d59ef-9fc1-4e4b-a44d-db571eeed203",
-    "ContainerID": "1504351ad1d291c5ee50cfc19d9537268ad730df6d7c3ef4daeeb7e2b75c788b",
-    "Name": "test-chapter-9.1",
-    "State": 3, // Completed
-    "Image": "sun4965485/echo-smy:v1",
-    "CPU": 0,
-    "Memory": 0,
-    "Disk": 0,
-    "ExposedPorts": {
-      "7777/tcp": {}
-    },
-    ...
-}
+2024/09/12 19:16:27 Performing task health check
+2024/09/12 19:16:27 url is : http://localhost:5000/tasks/
+2024/09/12 19:16:27 url is : http://localhost:5001/tasks/
+2024/09/12 19:16:27 url is : http://localhost:5002/tasks/
+2024/09/12 19:16:27 Task health checks completed
 ```
 
 
-## same container run same port and mapping different host port
+2024/09/12 19:35:17 collect stats from worker http://localhost:5002 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:120320, MemAvailable:497580, Buffers:53984, Cached:487972, SwapCached:66796, Active:638788, Inactive:672392, ActiveAnon:451248, InactiveAnon:551736, ActiveFile:187540, InactiveFile:120656, Unevictable:229476, Mlocked:80, SwapTotal:2097148, SwapFree:1151276, Dirty:72, Writeback:0, AnonPages:983380, Mapped:173624, Shmem:233760, Slab:256040, SReclaimable:159176, SUnreclaim:96864, KernelStack:11232, PageTables:28980, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:8054100, VmallocTotal:133143592960, VmallocUsed:29572, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
 
-```
-CONTAINER ID   IMAGE                    COMMAND       CREATED         STATUS         PORTS                      NAMES
-2cd1dd5d5cba   sun4965485/echo-smy:v1   "/app/echo"   4 minutes ago   Up 4 minutes   127.0.0.1:7801->7777/tcp   test-chapter-9.4
-22c79c936ab3   sun4965485/echo-smy:v1   "/app/echo"   5 minutes ago   Up 5 minutes   127.0.0.1:7800->7777/tcp   test-chapter-9.3
-ba718d096964   sun4965485/echo-smy:v1   "/app/echo"   5 minutes ago   Up 5 minutes   127.0.0.1:7779->7777/tcp   test-chapter-9.2
-232d41465d9d   sun4965485/echo-smy:v1   "/app/echo"   5 minutes ago   Up 5 minutes   127.0.0.1:7778->7777/tcp   test-chapter-9.1
-```
 
-## update check for every worker on every task
-```
-2024/09/09 15:31:40 Checking worker 127.0.0.1:5000 for task updates
-2024/09/09 15:31:40 Checking worker 127.0.0.1:5001 for task updates
-2024/09/09 15:31:40 Checking worker 127.0.0.1:5002 for task updates
-```
-
-## EVPM Schduler Algorithm for load balancing
-```
-2024/09/09 15:32:30 [manager] selected worker 127.0.0.1:5000 for task bb1d59ef-9fc1-4e4b-a44d-db571eeed203
-2024/09/09 15:32:40 [manager] selected worker 127.0.0.1:5000 for task 21b23589-5d2d-4731-b5c9-a97e9832d021
-2024/09/09 15:33:00 [manager] selected worker 127.0.0.1:5001 for task 95fbe134-7f19-496a-acfc-c7753e5b4cd2
-```
-
-## Task include all info to run container
-```
-2024/09/09 15:39:57 task bb1d59ef-9fc1-4e4b-a44d-db571eeed203 Running on container 5f38f532361917feb12b1c2071799c02e2cba47895673b5183d02cc27a8a7eb1
-2024/09/09 15:39:57 task 21b23589-5d2d-4731-b5c9-a97e9832d021 Running on container 9b1e2f405e4b2813cf8d39442d212bb2551ffa7e3772c11735840e9f2841d942
-...
-```
-
-## Health checks for every worker on every task
-```
-2024/09/11 01:15:09 Calling health check for task bb1d59ef-9fc1-4e4b-a44d-db571eeed203: /health
-2024/09/11 01:15:09 Calling health check for worker localhost task bb1d59ef-9fc1-4e4b-a44d-db571eeed203: http://localhost:7778/health
-2024/09/11 01:15:09 Task bb1d59ef-9fc1-4e4b-a44d-db571eeed203 health check response: 200
-2024/09/11 01:15:09 Calling health check for task 21b23589-5d2d-4731-b5c9-a97e9832d021: /health
-2024/09/11 01:15:09 Calling health check for worker localhost task 21b23589-5d2d-4731-b5c9-a97e9832d021: http://localhost:7779/health
-2024/09/11 01:15:09 Task 21b23589-5d2d-4731-b5c9-a97e9832d021 health check response: 200
-2024/09/11 01:15:09 Calling health check for task 95fbe134-7f19-496a-acfc-c7853e5b4cd2: /health
-2024/09/11 01:15:09 Calling health check for worker localhost task 95fbe134-7f19-496a-acfc-c7853e5b4cd2: http://localhost:7800/health
-2024/09/11 01:15:09 Task 95fbe134-7f19-496a-acfc-c7853e5b4cd2 health check response: 200
-2024/09/11 01:15:09 Calling health check for task 95fbe134-7f19-496a-acfc-c7753e5b4cd2: /health
-2024/09/11 01:15:09 Calling health check for worker localhost task 95fbe134-7f19-496a-acfc-c7753e5b4cd2: http://localhost:7801/health
-2024/09/11 01:15:09 Task 95fbe134-7f19-496a-acfc-c7753e5b4cd2 health check response: 200
-2024/09/11 07:00:02 Calling health check for task bb1d59ef-9fc1-4e4b-a44d-db571eeed203: /health
-2024/09/11 07:00:02 Calling health check for worker localhost task bb1d59ef-9fc1-4e4b-a44d-db571eeed203: http://localhost:7778/health
-```
-
-## Collect container port binding info
-```
-2024/09/11 06:59:52 updateTasks return resp Networking is nat.PortMap{"7777/tcp":[]nat.PortBinding{nat.PortBinding{HostIP:"127.0.0.1", HostPort:"7778"}}}
-```
-
-### Collect  all worker node stats about cpu, disk and memory which will be used to scedule
-
-```
-2024/09/11 07:26:56 collect stats from worker http://127.0.0.1:5000 success, CPU detail: linux.CPUStat{Id:cpu, User:338868, Nice:1029, System:107121, Idle:3540676, IOWait:7454, IRQ:0, SoftIRQ:4443, Steal:0, Guest:0, GuestNice:0}
-2024/09/11 07:26:56 collect stats from worker http://127.0.0.1:5000 success, Disk detail: linux.Disk{All:66205626368, Used:17017856000, Free:49187770368, FreeInodes:3723900}
-2024/09/11 07:26:56 collect stats from worker http://127.0.0.1:5000 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:93108, MemAvailable:536020, Buffers:23580, Cached:623660, SwapCached:54440, Active:812156, Inactive:683684, ActiveAnon:504656, InactiveAnon:529904, ActiveFile:307500, InactiveFile:153780, Unevictable:177560, Mlocked:80, SwapTotal:2097148, SwapFree:1146984, Dirty:536, Writeback:0, AnonPages:1008156, Mapped:204116, Shmem:185960, Slab:163100, SReclaimable:71744, SUnreclaim:91356, KernelStack:11008, PageTables:27076, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:7552064, VmallocTotal:133143592960, VmallocUsed:29268, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
-```
+2024/09/12 19:36:17 collect stats from worker http://localhost:5002 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:93096, MemAvailable:472472, Buffers:54108, Cached:486956, SwapCached:67052, Active:640584, Inactive:718120, ActiveAnon:451456, InactiveAnon:596968, ActiveFile:189128, InactiveFile:121152, Unevictable:216152, Mlocked:80, SwapTotal:2097148, SwapFree:1151788, Dirty:244, Writeback:0, AnonPages:1018376, Mapped:175420, Shmem:230784, Slab:256064, SReclaimable:159208, SUnreclaim:96856, KernelStack:11248, PageTables:28980, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:8061180, VmallocTotal:133143592960, VmallocUsed:29604, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}

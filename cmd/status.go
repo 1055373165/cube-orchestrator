@@ -43,7 +43,7 @@ the Cube manager`,
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 5, ' ', tabwriter.TabIndent)
-		fmt.Fprintf(w, "ID\tNAME\tCREATED\tSTATE\tCONTAINERNAME\tIMAGE\t")
+		fmt.Fprintf(w, "ID\tNAME\tCREATED\tSTATE\tCONTAINERNAME\tIMAGE\t\n")
 		for _, task := range tasks {
 			var start string
 			if task.StartTime.IsZero() {

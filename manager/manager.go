@@ -187,8 +187,8 @@ func (m *Manager) DoHealthChecks() {
 		log.Println("Performing task health check")
 		m.doHealthChecks()
 		log.Println("Task health checks completed")
-		log.Println("Sleeping for 60 seconds")
-		time.Sleep(60 * time.Second)
+		log.Println("Sleeping for 20 seconds")
+		time.Sleep(20 * time.Second)
 	}
 }
 
@@ -196,7 +196,6 @@ func (m *Manager) doHealthChecks() {
 	for _, worker := range m.Workers {
 		var tasks []*task.Task
 		url := fmt.Sprintf("http://%s/tasks/", worker)
-		log.Printf("url is : %s\n", url)
 		resp, err := http.Get(url)
 		if err != nil {
 			log.Printf("request worker %s to query tasks failed, err: %s\n", worker, err.Error())
