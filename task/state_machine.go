@@ -12,6 +12,10 @@ const (
 	Failed
 )
 
+func (s State) StateStringSlice() []string {
+	return []string{"Pending", "Scheduled", "Running", "Completed", "Failed"}
+}
+
 var stateTransitionMap = map[State][]State{
 	Pending:   {Scheduled},
 	Scheduled: {Scheduled, Running, Failed},
