@@ -4,6 +4,41 @@ cube-orchestrator is the core implementation of the container scheduler.
 
 ![image](https://github.com/user-attachments/assets/a4a3697a-4672-4823-9705-548513ad168e)
 
+The system consists of three main components: the **Scheduler**, the **Manager**, and the **Worker**.
+
+**Scheduler**
+
+The **Scheduler** operates in three generic phases: **Feasibility Analysis**, **Scoring**, and **Picking**, executed sequentially as it assigns tasks to appropriate workers.
+
+- **Feasibility Analysis**: This phase assesses whether it is possible to assign a task to a worker. In some cases, the task may not be assignable to any worker, while in others, it may only be assignable to a subset of workers. This phase can be compared to buying a car: with a budget of 100,000 RMB, the cars you can choose from depend on the dealership. Some dealerships may have only cars exceeding your budget, while others may have a subset of cars that fit your budget.
+
+- **Scoring**: In this phase, the scheduler scores the workers identified in the feasibility analysis based on certain criteria. This is the most critical stage of the scheduling process. Continuing with the car analogy, you might score the three cars within your budget based on factors such as fuel efficiency, color, and safety ratings.
+
+- **Picking**: In this final phase, the scheduler selects the worker with the highest or lowest score from the scoring phase.
+
+**Manager**
+
+The **Manager** consists of four main components: the **Scheduler**, **API**, **Task Store**, and **Workers**.
+
+- The **Scheduler** used here is the one described above.
+
+- The **API** is the primary interface for interacting with the system. Users can submit tasks, request task cancellations, and query the status of tasks and workers via the API.
+
+- The **Task Store** is how the manager reliably tracks all tasks in the system. This tracking ensures sound scheduling decisions and enables the manager to provide accurate information about task and worker statuses to users.
+
+- **Workers**: The manager oversees a collection of workers, monitoring their health and metrics in real time. Metrics include the number of tasks currently running on a worker, available memory, CPU load, and free disk space. These metrics, combined with data from the Task Store, support scheduling decisions.
+
+**Worker**
+
+The **Worker** consists of four main components: **API**, **Task Runtime**, **Task Storage**, and **Metrics**.
+
+- Like the manager, the worker also has an **API** module, but its purpose differs. The worker's API primarily serves the manager. Through this API, the manager can send task assignment, cancellation, and retry requests to the worker, as well as retrieve the worker's status metrics.
+
+- The **Task Runtime** is implemented using Docker (via the Docker Go client).
+
+- The worker tracks the tasks it is responsible for using **Task Storage**.
+
+- **Metrics**: The worker provides metrics about its current state, including task execution details and resource utilization, which it shares via its API for use by the manager.
 
 ## Start And API Test
 
