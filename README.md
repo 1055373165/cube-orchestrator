@@ -146,8 +146,20 @@ Stopping container 8948cacd7e29...
 2024/09/12 19:16:27 url is : http://localhost:5002/tasks/
 2024/09/12 19:16:27 Task health checks completed
 
-2024/09/12 19:35:17 collect stats from worker http://localhost:5002 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:120320, MemAvailable:497580, Buffers:53984, Cached:487972, SwapCached:66796, Active:638788, Inactive:672392, ActiveAnon:451248, InactiveAnon:551736, ActiveFile:187540, InactiveFile:120656, Unevictable:229476, Mlocked:80, SwapTotal:2097148, SwapFree:1151276, Dirty:72, Writeback:0, AnonPages:983380, Mapped:173624, Shmem:233760, Slab:256040, SReclaimable:159176, SUnreclaim:96864, KernelStack:11232, PageTables:28980, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:8054100, VmallocTotal:133143592960, VmallocUsed:29572, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
+2024/09/12 19:35:17 collect stats from worker http://localhost:5002 success, Memory detail:
+linux.MemInfo{MemTotal:2014312, MemFree:120320, MemAvailable:497580, Buffers:53984, Cached:487972,
+SwapCached:66796, Active:638788, Inactive:672392, ActiveAnon:451248, InactiveAnon:551736, ActiveFile:187540,
+InactiveFile:120656, Unevictable:229476, Mlocked:80, SwapTotal:2097148, SwapFree:1151276, Dirty:72, Writeback:0,
+AnonPages:983380, Mapped:173624, Shmem:233760, Slab:256040, SReclaimable:159176, SUnreclaim:96864, KernelStack:11232,
+PageTables:28980, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:8054100, VmallocTotal:133143592960,
+VmallocUsed:29572, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
 
 
-2024/09/12 19:36:17 collect stats from worker http://localhost:5002 success, Memory detail: linux.MemInfo{MemTotal:2014312, MemFree:93096, MemAvailable:472472, Buffers:54108, Cached:486956, SwapCached:67052, Active:640584, Inactive:718120, ActiveAnon:451456, InactiveAnon:596968, ActiveFile:189128, InactiveFile:121152, Unevictable:216152, Mlocked:80, SwapTotal:2097148, SwapFree:1151788, Dirty:244, Writeback:0, AnonPages:1018376, Mapped:175420, Shmem:230784, Slab:256064, SReclaimable:159208, SUnreclaim:96856, KernelStack:11248, PageTables:28980, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:8061180, VmallocTotal:133143592960, VmallocUsed:29604, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
+2024/09/12 19:36:17 collect stats from worker http://localhost:5002 success, Memory detail:
+linux.MemInfo{MemTotal:2014312, MemFree:93096, MemAvailable:472472, Buffers:54108, Cached:486956,
+SwapCached:67052, Active:640584, Inactive:718120, ActiveAnon:451456, InactiveAnon:596968, ActiveFile:189128,
+InactiveFile:121152, Unevictable:216152, Mlocked:80, SwapTotal:2097148, SwapFree:1151788, Dirty:244, Writeback:0,
+AnonPages:1018376, Mapped:175420, Shmem:230784, Slab:256064, SReclaimable:159208, SUnreclaim:96856, KernelStack:11248,
+PageTables:28980, NFS_Unstable:0, Bounce:0, WritebackTmp:0, CommitLimit:3104304, Committed_AS:8061180, VmallocTotal:133143592960,
+VmallocUsed:29604, VmallocChunk:0, HardwareCorrupted:0, AnonHugePages:0, HugePages_Total:0, HugePages_Free:0, HugePages_Rsvd:0, HugePages_Surp:0, Hugepagesize:2048, DirectMap4k:0, DirectMap2M:0, DirectMap1G:0}
 ```
