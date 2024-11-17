@@ -40,6 +40,8 @@ The **Worker** consists of four main components: **API**, **Task Runtime**, **Ta
 
 - **Metrics**: The worker provides metrics about its current state, including task execution details and resource utilization, which it shares via its API for use by the manager.
 
+> Development Environment: Ubuntu 22.04 arm64
+
 ## Start And API Test
 
 1. start docker desktop Engine on your computer
